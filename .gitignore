@@ -1,0 +1,31 @@
+# --- env / secrets ---
+.env
+*.env
+backend/.env
+frontend/.env
+
+# --- node / react ---
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+frontend/build/
+dist/
+coverage/
+npm-debug.log*
+yarn-error.log*
+
+# --- python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.log
+*.pkl
+*.pickle
+*.joblib
+
+# --- OS/IDE junk ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

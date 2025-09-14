@@ -1,0 +1,14 @@
+{
+  "age": 30,
+  "gender": "Male",
+  "procrastination_level": 5,
+  "motivation_level": 7,
+  "fatigue_level": 3,
+  "sleep_hours": 8,
+  "task_complexity": 6,
+  "current_habits_count": 2,
+  "morning_person": "1",
+  "goal_clarity": 8,
+  "focus_span": 45,
+  "time_availability": 120
+}
