@@ -1,0 +1,785 @@
+{
+  "info": {
+    "_postman_id": "e71e8529-0488-45dd-b0a6-2c970e64ffe8",
+    "name": "Habit Tracking System - API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47731544",
+    "_collection_link": "https://anu-isuru91-9173785.postman.co/workspace/7f946aa3-6450-4f6f-8d7e-9e5ffb622b6e/collection/47731544-e71e8529-0488-45dd-b0a6-2c970e64ffe8?action=share&source=collection_link&creator=47731544"
+  },
+  "item": [
+    {
+      "name": "User Authentication",
+      "item": [
+        {
+          "name": "TC-001: User Registration with Complete Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "dbdd7e9a-1648-41cb-bdfd-e9121245179c",
+                "exec": [
+                  "pm.test(\"Status code is 200 or 201\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Response contains success message\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"User registered\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "34b9513e-6cbb-43d2-b1f1-3c7234f248ed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"f_name\": \"test\",\r\n  \"l_name\": \"user5\",\r\n  \"email\": \"test.user5@example.com\",\r\n  \"password\": \"testuser@123!\",\r\n  \"dob\": \"1995-05-15\",\r\n  \"gender\": \"Male\",\r\n  \"user_role\": \"employee\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-002: User Registration with Missing Required Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "eb33d026-5f1c-4851-8207-45b56d0534ef",
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Response indicates bad request\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"All fields are required\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "4a1833b5-aad2-4e96-8309-840e40ebfff5",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"f_name\": \"test\",\r\n  \"l_name\": \"user2\",\r\n  \"email\": \"test.user2@example.com\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-003 — Login with Valid Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "48329c72-af17-4707-b6e7-e4deefbab499",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Response contains token\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json).to.have.property(\"token\");\r",
+                  "    pm.expect(json.token).to.be.a(\"string\");\r",
+                  "});\r",
+                  "\r",
+                  "// Automatically save token for all subsequent requests\r",
+                  "var json = pm.response.json();\r",
+                  "if (json.token) {\r",
+                  "    pm.collectionVariables.set(\"auth_token\", json.token);\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "11ffe532-71a3-4e9b-81f6-84f19c5efb3a",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"test.user5@example.com\",\r\n  \"password\": \"testuser@123!\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-004 — Login with Invalid Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "38b6a976-d308-4fd8-a82f-c1f2699f96d2",
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {\r",
+                  "    pm.response.to.have.status(401);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Response contains invalid credentials message\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"Invalid credentials\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "88a8d0b4-be9c-4071-ad3e-9d3955f84323",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"test.user5@example.com\",\r\n  \"password\": \"Wrongpassword@123!\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-005: Get Current User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "2b5fc8f3-ba5a-4fb9-b1a2-ab7914c2fc47",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Response contains user profile fields\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json).to.have.property(\"id\");\r",
+                  "    pm.expect(json).to.have.property(\"f_name\");\r",
+                  "    pm.expect(json).to.have.property(\"email\");\r",
+                  "    pm.expect(json).to.have.property(\"user_role\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "26a1e650-6866-48a6-ad87-d4feac5f79d7",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/user",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "user"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-006 — Get User Profile Without Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "0807dac1-d4a7-43f6-8d87-35bfb148ba5c",
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {\r",
+                  "    pm.response.to.have.status(401);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Response contains unauthorized message\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"Unauthorized\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "629f45cf-43f1-4f36-9b83-2b043bd3d097",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5000/api/user",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "user"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "fb85bd9e-3691-4c57-bc3a-6eb361d69bdf"
+    },
+    {
+      "name": "Habit Management",
+      "item": [
+        {
+          "name": "TC-007 — Create New Habit with All Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "6af14fa0-1225-4aec-972b-6e43b5faa68f",
+                "exec": [
+                  "pm.test(\"Status code is 200 or 201\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Habit created successfully\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"Habit created\");\r",
+                  "    pm.expect(json).to.have.property(\"habit_id\");\r",
+                  "});\r",
+                  "\r",
+                  "// Automatically save habit_id for subsequent tests\r",
+                  "var json = pm.response.json();\r",
+                  "if (json.habit_id) {\r",
+                  "    pm.collectionVariables.set(\"habit_id\", json.habit_id);\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "ebdacc00-d073-4355-afe1-1a6563d2a02f",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"description\": \"Morning Exercise - 30 minutes cardio\",\r\n  \"frequency\": \"daily\",\r\n  \"time_preference\": \"09:00:00\",\r\n  \"location\": \"Home gym\",\r\n  \"start_date\": \"2024-11-20\",\r\n  \"reminder_time\": \"06:00:00\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/habits",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "habits"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-008 — Create Habit with Missing Required Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "8508553f-9449-4c21-b135-d7004169680b",
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Response contains error message\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"Missing required fields\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "c979b951-0aef-410b-a38a-e68c02a78055",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"description\": \"Morning Exercise - 30 minutes cardio\",\r\n  \"frequency\": \"daily\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/habits",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "habits"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "e86c7310-e030-4455-a083-fc969ef42922"
+    },
+    {
+      "name": "Habit Logs",
+      "item": [
+        {
+          "name": "TC-009 — Create Habit Log Entry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "febecb5f-5eec-4f04-9e05-02a22afb0a3e",
+                "exec": [
+                  "pm.test(\"Status code is 200 or 201\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Log saved successfully\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"Log saved\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "f20e0b39-29e2-4830-94c2-0b46379064f5",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"habit_id\": {{habit_id}},\r\n  \"log_date\": \"2024-10-31\",\r\n  \"status\": \"completed\",\r\n  \"notes\": \"Great workout today!\",\r\n  \"feedback_rating\": 5\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/habit-logs",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "habit-logs"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-010 — Create Log for Another User's Habit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "1f090e57-24b8-4230-abd6-654c7a63b366",
+                "exec": [
+                  "pm.test(\"Status code is 403\", function () {\r",
+                  "    pm.response.to.have.status(403);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Cross-user data access is blocked\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"Not your habit\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "8f57bcd2-9936-4b11-be72-03404cc3c194",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"habit_id\": 1,\r\n  \"log_date\": \"2024-10-31\",\r\n  \"status\": \"completed\",\r\n  \"notes\": \"Great workout today!\",\r\n  \"feedback_rating\": 5\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/habit-logs",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "habit-logs"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "be8b7916-3a32-4fff-8146-7a40dcc33b96"
+    },
+    {
+      "name": "Recommendations",
+      "item": [
+        {
+          "name": "TC-011: Generate Recommendation with User Factors",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "95b50ebd-71b4-46f6-997a-4962b0a2f64b",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Response contains a recommendation\", function () {\r",
+                  "    pm.expect(pm.response.text()).to.have.length.above(0);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "0620dd9b-bc1c-4bd2-8296-6482e45b6492",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"age\": 28,\r\n  \"gender\": \"Male\",\r\n  \"procrastination_level\": 8,\r\n  \"motivation_level\": 4,\r\n  \"fatigue_level\": 7,\r\n  \"sleep_hours\": 6,\r\n  \"task_complexity\": 6,\r\n  \"current_habits_count\": 3,\r\n  \"morning_person\": \"0\",\r\n  \"goal_clarity\": 7,\r\n  \"focus_span\": 25,\r\n  \"time_availability\": 30,\r\n  \"habit_id\": 1,\r\n  \"habit_name\": \"Morning Exercise\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/recommend",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "recommend"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "ecb9ee10-ee44-46c4-8d59-0fe3e7de3daf"
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "TC-012 — Submit Positive Feedback (Rating >= 3)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "7eea3dfb-383b-438f-ade1-167086fc626e",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200,201]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Feedback saved successfully\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"Feedback saved\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "30d9a6f2-cc93-4a0b-bcdf-193252687676",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"rec_id\": 1,\r\n  \"feedback_rating\": 4,\r\n  \"feedback_comment\": \"This technique really helped me!\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/feedback",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "feedback"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-013: Submit Negative Feedback (Rating < 3)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "0e8f9185-725f-4120-ae70-d9465b7dd4a2",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200,201]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Feedback saved successfully\", function () {\r",
+                  "    var json = pm.response.json();\r",
+                  "    pm.expect(json.message).to.eql(\"Feedback saved and recommendation inactivated\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "c96124d9-16ef-452f-ab17-234966cfd9fa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"rec_id\": 1,\r\n  \"feedback_rating\": 2,\r\n  \"feedback_comment\": \"This didn't work for me at all\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/feedback",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "feedback"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "id": "07fbbd61-e30e-47f2-b75c-a642a137c99c"
+    }
+  ],
+  "variable": [
+    {
+      "id": "70a85bb6-226e-4e33-b2f6-3a47b7c36b3b",
+      "key": "auth_token",
+      "value": ""
+    },
+    {
+      "id": "7f5693d5-93fa-4b67-a92a-4b1459d7c4ab",
+      "key": "habit_id",
+      "value": ""
+    }
+  ]
+}

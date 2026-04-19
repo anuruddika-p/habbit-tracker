@@ -5,6 +5,7 @@
     "jwt-decode": "^4.0.0",
     "node-cron": "^4.2.1",
     "postcss": "^8.5.6",
+    "react-modal": "^3.16.3",
     "react-router-dom": "^7.8.1",
     "tailwindcss": "^4.1.12"
   }

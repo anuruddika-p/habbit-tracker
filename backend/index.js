@@ -397,11 +397,45 @@ app.get("/api/habits", authenticate, (req, res) => {
 
 // Recommendation Endpoint
 app.post("/api/recommend", authenticate, (req, res) => {
-  const { habit_id, ...userData } = req.body;
+  const {
+    age,
+    gender,
+    procrastination_level,
+    motivation_level,
+    fatigue_level,
+    sleep_hours,
+    task_complexity,
+    current_habits_count,
+    morning_person,
+    goal_clarity,
+    focus_span,
+    time_availability,
+    user_id,
+    habit_id,
+    habit_name,
+  } = req.body;
+
+  const inputData = {
+    user_id: req.user.id,
+    age,
+    gender,
+    procrastination_level,
+    motivation_level,
+    fatigue_level,
+    sleep_hours,
+    task_complexity,
+    current_habits_count,
+    morning_person,
+    goal_clarity,
+    focus_span,
+    time_availability,
+    habit_id,
+    habit_name,
+  };
 
   const python = spawn("python", [
     "predict_technique.py",
-    JSON.stringify({ user_id: req.user.id, ...userData }),
+    JSON.stringify(inputData),
   ]);
 
   let stdout = "",
@@ -417,7 +451,6 @@ app.post("/api/recommend", authenticate, (req, res) => {
         .json({ message: "Error generating recommendation" });
     }
 
-    // parse JSON from Python
     let technique,
       rule_id = null,
       reason = null;
@@ -427,35 +460,158 @@ app.post("/api/recommend", authenticate, (req, res) => {
       rule_id = obj.rule_id ?? null;
       reason = obj.reason ?? null;
     } catch {
-      technique = stdout.trim(); // fallback if old script prints a plain string
+      technique = stdout.trim();
     }
     if (!technique)
       return res.status(500).json({ message: "No technique returned" });
 
     const message = `Recommended technique: ${technique}`;
 
+    // 🔹 Check if this technique was already marked inactive for this user+habit
     db.query(
-      `INSERT INTO recommendations
-         (message, user_id, habit_id, reason, rule_id, generated_on)
-       VALUES (?, ?, ?, ?, ?, NOW())`,
-      [message, req.user.id, habit_id || null, reason, rule_id],
+      "SELECT * FROM recommendations WHERE user_id = ? AND habit_id = ? AND message LIKE ? AND status = 'inactive'",
+      [req.user.id, habit_id, `%${technique}%`],
       (err, results) => {
         if (err) {
-          console.error("DB error:", err);
+          console.error("DB check error:", err);
           return res
             .status(500)
-            .json({ message: "Error saving recommendation" });
+            .json({ message: "Error checking past recommendations" });
         }
-        res.json({
-          rec_id: results.insertId,
-          recommended_technique: technique,
-          reason,
-          rule_id,
-        });
+
+        if (results.length > 0) {
+          return res.status(400).json({
+            message:
+              "This technique was already rated low by the user. Please try a different approach.",
+          });
+        }
+
+        // Insert as active recommendation
+        db.query(
+          `INSERT INTO recommendations
+             (message, user_id, habit_id, reason, rule_id, status, generated_on)
+           VALUES (?, ?, ?, ?, ?, 'active', NOW())`,
+          [message, req.user.id, habit_id || null, reason, rule_id],
+          (err, results) => {
+            if (err) {
+              console.error("DB error:", err);
+              return res
+                .status(500)
+                .json({ message: "Error saving recommendation" });
+            }
+            res.json({
+              rec_id: results.insertId,
+              recommended_technique: technique,
+              reason,
+              rule_id,
+            });
+          }
+        );
       }
     );
   });
 });
+
+// Recheck Technique for a Habit
+app.post("/api/recheck-techniques", authenticate, (req, res) => {
+  const { habit_id } = req.body;
+  if (!habit_id)
+    return res.status(400).json({ message: "habit_id is required" });
+
+  // 1. Mark old recommendations for this habit as inactive
+  db.query(
+    "UPDATE recommendations SET status = 'inactive' WHERE user_id = ? AND habit_id = ? AND status = 'active'",
+    [req.user.id, habit_id],
+    (err) => {
+      if (err) {
+        console.error("DB update error:", err);
+        return res
+          .status(500)
+          .json({ message: "Error updating old recommendations" });
+      }
+
+      // 2. Fetch habit description so Python can detect habit type
+      db.query(
+        "SELECT description FROM habits WHERE habit_id = ? AND user_id = ?",
+        [habit_id, req.user.id],
+        (err, rows) => {
+          if (err || !rows.length) {
+            console.error("Habit lookup error:", err);
+            return res.status(404).json({ message: "Habit not found" });
+          }
+
+          const habitName = rows[0].description;
+
+          // 3. Call Python script again for a new recommendation
+          const inputData = {
+            user_id: req.user.id,
+            habit_id,
+            habit_name: habitName, // 👈 important for keyword rules
+          };
+
+          const python = spawn("python", [
+            "predict_technique.py",
+            JSON.stringify(inputData),
+          ]);
+
+          let stdout = "",
+            stderr = "";
+          python.stdout.on("data", (d) => (stdout += d.toString()));
+          python.stderr.on("data", (d) => (stderr += d.toString()));
+
+          python.on("close", (code) => {
+            if (code !== 0) {
+              console.error("Python error:", stderr || stdout);
+              return res
+                .status(500)
+                .json({ message: "Error generating new recommendation" });
+            }
+
+            let technique,
+              rule_id = null,
+              reason = null;
+            try {
+              const obj = JSON.parse(stdout.trim());
+              technique = obj.technique;
+              rule_id = obj.rule_id ?? null;
+              reason = obj.reason ?? null;
+            } catch {
+              technique = stdout.trim();
+            }
+
+            if (!technique)
+              return res.status(500).json({ message: "No technique returned" });
+
+            const message = `Recommended technique: ${technique}`;
+
+            // 4. Insert new recommendation as active
+            db.query(
+              `INSERT INTO recommendations
+                 (message, user_id, habit_id, reason, rule_id, status, generated_on)
+               VALUES (?, ?, ?, ?, ?, 'active', NOW())`,
+              [message, req.user.id, habit_id, reason, rule_id],
+              (err, results) => {
+                if (err) {
+                  console.error("DB insert error:", err);
+                  return res
+                    .status(500)
+                    .json({ message: "Error saving new recommendation" });
+                }
+                res.json({
+                  rec_id: results.insertId,
+                  recommended_technique: technique,
+                  reason,
+                  rule_id,
+                });
+              }
+            );
+          });
+        }
+      );
+    }
+  );
+});
+
 // ===== HABIT LOGS =====
 
 // Create / update a log (one per day)
@@ -574,17 +730,41 @@ app.post("/api/feedback", authenticate, (req, res) => {
   if (!rec_id || !feedback_rating) {
     return res.status(400).json({ message: "Missing required fields" });
   }
+
+  // 1. Save feedback
   db.query(
     "INSERT INTO recommendation_feedback (rec_id, feedback_rating, feedback_comment) VALUES (?, ?, ?)",
     [rec_id, feedback_rating, feedback_comment || null],
     (err) => {
       if (err) {
         console.error("Feedback save error:", err);
-        return res
-          .status(500)
-          .json({ message: "Error saving feedback", error: err.message });
+        return res.status(500).json({
+          message: "Error saving feedback",
+          error: err.message,
+        });
       }
-      res.status(201).json({ message: "Feedback saved" });
+
+      // 2. If rating < 3 → mark recommendation inactive
+      if (feedback_rating < 3) {
+        db.query(
+          "UPDATE recommendations SET status = 'inactive' WHERE rec_id = ? AND user_id = ?",
+          [rec_id, req.user.id],
+          (updateErr) => {
+            if (updateErr) {
+              console.error("Error marking inactive:", updateErr);
+              return res.status(500).json({
+                message: "Feedback saved but failed to update recommendation",
+              });
+            }
+            return res.status(201).json({
+              message: "Feedback saved and recommendation inactivated",
+            });
+          }
+        );
+      } else {
+        // Rating 3 or above → just save feedback, recommendation stays active
+        res.status(201).json({ message: "Feedback saved" });
+      }
     }
   );
 });
@@ -592,17 +772,17 @@ app.post("/api/feedback", authenticate, (req, res) => {
 // Recommendations Endpoint
 app.get("/api/recommendations", authenticate, (req, res) => {
   db.query(
-    "SELECT * FROM recommendations WHERE user_id = ?",
+    "SELECT * FROM recommendations WHERE user_id = ? AND status = 'active' ORDER BY generated_on DESC LIMIT 1",
     [req.user.id],
     (err, results) => {
       if (err) {
         console.error("Recommendations fetch error:", err);
         return res.status(500).json({
           message: "Error fetching recommendations",
-          error: err.message,
+          error: err?.message,
         });
       }
-      res.json(results);
+      res.json(results[0] || {});
     }
   );
 });
